@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { getAICoachResponse, detectCrisis } from './services/aiCoach';
 
 // Load environment variables
 dotenv.config();
@@ -44,28 +45,38 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-// Chat endpoint (placeholder - will be enhanced with AI)
+// Chat endpoint with AI Coach integration
 app.post('/api/chat', async (req: Request, res: Response) => {
   try {
-    const { message, sessionId } = req.body;
+    const { message, sessionId, conversationHistory = [] } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Placeholder response (will be replaced with actual AI logic)
+    // Detect crisis situations
+    const isCrisis = detectCrisis(message);
+
+    // Get AI Coach response
+    const aiResponse = await getAICoachResponse(message, conversationHistory);
+
+    // Prepare response
     const response = {
       id: Date.now().toString(),
       role: 'assistant',
-      content: 'I understand. Let me help you with that. This is a placeholder response that will be replaced with actual AI-powered coaching guidance based on evidence from leading scientists.',
+      content: aiResponse,
       timestamp: new Date().toISOString(),
       sessionId: sessionId || 'default',
+      isCrisis,
     };
 
     res.json(response);
   } catch (error) {
     console.error('Chat error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: 'Failed to process your message. Please try again.'
+    });
   }
 });
 

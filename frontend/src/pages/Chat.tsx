@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { sendChatMessage, type ChatMessage } from '../services/api';
 
 interface Message {
   id: string;
@@ -39,20 +40,49 @@ export default function Chat() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response (will be replaced with actual API call)
-    setTimeout(() => {
+    try {
+      // Prepare conversation history for API
+      const history: ChatMessage[] = messages.map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      // Call real AI Coach API
+      const response = await sendChatMessage(
+        currentInput,
+        'default-session',
+        history
+      );
+
       const aiMessage: Message = {
+        id: response.id,
+        role: 'assistant',
+        content: response.content,
+        timestamp: new Date(response.timestamp),
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+
+      // Show alert if crisis detected
+      if (response.isCrisis) {
+        alert('⚠️ Crisis Detected: If you\'re in crisis, please call 988 (Suicide & Crisis Lifeline) or contact a mental health professional immediately.');
+      }
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I understand. Let me help you with that. This is a placeholder response. In production, this will connect to the AI Coach API with evidence-based guidance.',
+        content: 'I apologize, but I\'m having trouble connecting right now. Please try again in a moment, or call +1 (564) 529-6454 for immediate support.',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
