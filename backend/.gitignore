@@ -1,9 +1,6 @@
 # Dependencies
 node_modules/
 
-# Build output
-dist/
-
 # Environment variables
 .env
 .env.local
@@ -27,3 +24,6 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+
+# NOTE: We're keeping dist/ in Git for easier deployment
+# dist/
